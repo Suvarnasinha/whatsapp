@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <v-container>
     <v-form @submit.prevent="register">
       <v-text-field v-model="username" label="Username" ></v-text-field>
@@ -11,7 +11,6 @@
 </template>
 
 <script setup>
-import router from '@/router';
 import { ref } from 'vue';
 // import { useRouter } from 'vue-router';
 
@@ -44,7 +43,6 @@ import { ref } from 'vue';
         if(response.ok){
         const data = await response.json();
         console.log("data",data)
-        router.push('/login');
         }
       } catch (error) {
         console.error(error);
@@ -53,71 +51,35 @@ import { ref } from 'vue';
 
 </script>
 
-<style scoped>
-/* Container styling */
-.v-container {
-  max-width: 500px;
-  margin: 50px auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+index.js??clonedRule…tup=true&lang=js:24 
+ POST http://localhost:3003/registration 400 (Bad Request)
 
-/* Form styling */
-v-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-v-text-field {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-  padding: 10px;
-}
-
-v-text-field label {
-  font-size: 14px;
-  color: #555;
-}
-
-v-text-field input {
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  padding: 10px;
-  font-size: 16px;
-}
-
-v-text-field input:focus {
-  border-color: #007bff;
-  outline: none;
-}
-
-/* Button styling */
-v-btn {
-  align-self: center;
-  background-color: #007bff;
-  color: #ffffff;
-  text-transform: uppercase;
-  font-weight: bold;
-  padding: 12px 20px;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-v-btn:hover {
-  background-color: #0056b3;
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-}
-
-v-btn:focus {
-  outline: none;
-}
-
-v-btn:active {
-  background-color: #004494;
-}
-</style>
+index.js??clonedRule…tup=true&lang=js:37 response 
+Response {type: 'cors', url: 'http://localhost:3003/registration', redirected: false, status: 400, ok: false, …}
+body
+: 
+(...)
+bodyUsed
+: 
+false
+headers
+: 
+Headers {}
+ok
+: 
+false
+redirected
+: 
+false
+status
+: 
+400
+statusText
+: 
+"Bad Request"
+type
+: 
+"cors"
+url
+: 
+"http://localhost:3003/registration" -->

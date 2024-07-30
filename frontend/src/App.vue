@@ -1,23 +1,12 @@
 <template>
   <v-app>
     <v-main>
-      <HelloWorld/>
+      <router-link to="/">Go to Foo</router-link>
+      <router-view></router-view>
     </v-main>
   </v-app>
 </template>
 
-<script>
-import HelloWorld from './components/HelloWorld.vue'
+<script setup>
 
-export default {
-  name: 'App',
-
-  components: {
-    HelloWorld,
-  },
-
-  data: () => ({
-    //
-  }),
-}
 </script>

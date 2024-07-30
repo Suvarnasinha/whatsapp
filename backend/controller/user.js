@@ -1,118 +1,109 @@
 const express = require("express");
 const app = express();
-const sequelize = require("../utils/database");
 const jwt = require('jsonwebtoken');
-const bodyParser = require("body-parser");
-const bcrypt = require('bcrypt');
-const { user } = require('../models');
-app.use(bodyParser.urlencoded({ extended: true }));
+const { user,session } = require('../models')
+const bcrypt = require("bcrypt");
+var cookies = require("cookie-parser");
+app.use(cookies());
 
-exports.getuser = async (req, res) => {
-  res.send("hello");
-};
-
-exports.postuser = async (req, res) => {
+exports.registration = async (req, res) => {
+  
   try {
     const { username, phoneNumber, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashPass = await bcrypt.hash(password, salt);
     const newUser = await user.create({
-      username,
-      phoneNumber,
-      email,
-      password: hashedPassword,
+      username:username,
+      phoneNumber:phoneNumber,
+      email:email,
+      password:hashPass,
     });
-
-    const token = jwt.sign({ id: newUser.id }, 'your_secret_key', { expiresIn: '1h' });
-    res.json({ token, user: newUser });
+  console.log(newUser);
+    res.json(newUser)
   } catch (error) {
     console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
 
-exports.postlogin = async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(req.body)
     const loginverify = await user.findOne({ where: { email } });
-
     if (!loginverify) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid email' });
     }
-
-    const validPassword = await bcrypt.compare(password, loginverify.password);
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
-
+    else{
+     const newPassword=bcrypt.compare(password,loginverify.password);
+     console.log(newPassword,"password-old",password)
+     if(newPassword){
     const token = jwt.sign({ id: loginverify.id }, 'your_secret_key', { expiresIn: '1h' });
-    res.cookie('token', token, { httpOnly: true });
-    const contacts = await user.findAll();
-    res.json({ token, user: loginverify, contacts, messages: [] });
-  } catch (error) {
-    console.error(error);
-    res.status(400).json({ error: error.message });
-  }
-};
+    console.log("USERID",loginverify.id)
+    res.cookie("token", token, { httpOnly: true , secure:false});
+    console.log("token", token);
+    const token1 = req.cookies.token;
+    console.log(token1);
+    const getSession= await session.findOne({
+      attributes: ['id', 'userid', 'session_token', 'createdAt', 'updatedAt'],
+      where:{userid:loginverify.id},
 
-exports.forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await user.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    })
+    console.log("getSession")
+    if(getSession==null){
+      const createSession=await session.create({
+        userid:loginverify.id,
+        session_token:token,
+        status:0
+      })
+    }else{
+      const updateSession = await session.update(
+        { status: 0 },
+        {
+          where: { userid: loginverify.id },
+        }
+      );
     }
-
-    // Implement sending a reset link to the user's email
-    // You can use nodemailer to send the email with a reset token
-
-    res.json({ message: 'Password reset link sent' });
+    res.json({login:loginverify,token:token,id:loginverify.id})
+    }
+  }
   } catch (error) {
     console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
 
-exports.resetPassword = async (req, res) => {
+
+
+exports.logout = async (req, res) => {
+  const user_id =req.userid;
   try {
-    const { token, newPassword } = req.body;
-    // Verify token and find user
-    // const decoded = jwt.verify(token, 'your_secret_key');
-    // const user = await user.findByPk(decoded.id);
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await user.update({ password: hashedPassword }, { where: { id: decoded.id } });
-
-    res.json({ message: 'Password reset successful' });
-  } catch (error) {
-    console.error(error);
-    res.status(400).json({ error: error.message });
+    const logout = await session.update(
+      { status: 1 },
+      { where: { userid: user_id } }
+    );
+    res.clearCookie("token");
+    res.json(user_id);
+  } catch (err) {
+    console.log(err);
   }
 };
 
-// Other CRUD operations (getAllUsers, updateUser, deleteUser)
 
-const express = require('express');
-const router = express.Router();
-const { User } = require('../models');
-const authMiddleware = require('../middleware/authMiddleware');
-
-// Get all users (protected route)
-router.get('/all', authMiddleware, async (req, res) => {
-  try {
-    const users = await User.findAll({
-      attributes: ['id', 'username', 'phoneNumber', 'email'], // Adjust as needed
-    });
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: 'An error occurred while fetching users.' });
-  }
-});
-
-module.exports = router;
+exports.getalluser = async(req,res)=>{
+  const user_id =req.userid;
+try {
+  const users = await user.findAll({
+    attributes: ['id', 'username', 'phoneNumber', 'email'],
+  });
+  res.json(users);
+} catch (error) {
+  console.log(error);
+}
+}
 
 
-exports.postupdateuser = async (req, res) => {
+exports.postupdateuser = async(req,res)=>{
   try {
     const updated = await user.update(req.body, {
       where: { id: req.params.id }
@@ -126,19 +117,20 @@ exports.postupdateuser = async (req, res) => {
   } catch (error) {
     console.log(error);
   }
-};
-
-exports.postdelete = async (req, res) => {
-  try {
-    const deleted = await user.destroy({
-      where: { id: req.params.id }
-    });
-    if (deleted) {
-      res.status(204).json();
-    } else {
-      res.status(404).json({ error: 'User not found' });
-    }
-  } catch (error) {
-    console.log(error);
   }
-};
+
+
+  exports.postdelete =async(req,res)=>{
+    try {
+      const deleted = await user.destroy({
+        where: { id: req.params.id }
+      });
+      if (deleted) {
+        res.status(204).json();
+      } else {
+        res.status(404).json({ error: 'User not found' });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
